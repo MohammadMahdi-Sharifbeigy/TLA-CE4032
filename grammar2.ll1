@@ -1,0 +1,52 @@
+START = Program
+
+NON_TERMINALS = Program , Function , Block , Statements , Statement , Expression ,Expression_pr , Term , Term_pr , Factor
+
+TERMINALS = FUNCTION , ID , NUM , IF , WHILE , RETURN , LEFT_PAR , RIGHT_PAR ,LEFT_BRACE , RIGHT_BRACE , EQUALS , SEMICOLON , PLUS , MINUS , STAR , SLASH
+
+Program  -> Function  Program | eps
+Function  -> FUNCTION  ID  LEFT_PAR  RIGHT_PAR  Block
+Block  -> LEFT_BRACE  Statements  RIGHT_BRACE
+Statements  -> Statement  Statements | eps
+Statement  -> ID  EQUALS  Expression  SEMICOLON | IF  LEFT_PAR  Expression  RIGHT_PAR
+    Block | WHILE  LEFT_PAR  Expression  RIGHT_PAR  Block | RETURN  Expression
+    SEMICOLON
+Expression  -> Term  Expression_pr
+Expression_pr  -> PLUS  Term  Expression_pr | MINUS  Term  Expression_pr | eps
+Term  -> Factor  Term_pr
+Term_pr  -> STAR  Factor  Term_pr | SLASH  Factor  Term_pr| eps
+Factor  -> ID | NUM | LEFT_PAR  Expression  RIGHT_PAR
+
+FUNCTION     -> /function/
+IF           -> /if/
+WHILE        -> /while/
+RETURN       -> /return/
+ID           -> /[a-zA -Z_][a-zA -Z0 -9_]*/
+NUM          -> /-?\d+(\.\d+)?([eE][+ -]?\d+)?/
+LEFT_PAR     -> /\(/
+RIGHT_PAR    -> /\)/
+LEFT_BRACE   -> /\{/
+RIGHT_BRACE  -> /\}/
+EQUALS       -> /=/
+SEMICOLON    -> /;/
+PLUS         -> /\+/
+MINUS        -> /-/
+STAR         -> /\*/
+SLASH        -> /\//
+
+# sample strings of grammar
+
+function  main ( ) {
+    x = 42 ;
+    y = 3.14 ;
+    z = ( x + y ) * 2 ;
+
+    if ( z ) {
+        result = z / 1.5 ;
+    }
+
+    while ( x > 0 ) {
+        x = x - 1 ;
+    }
+    return  result ;
+}
