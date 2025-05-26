@@ -355,7 +355,9 @@ if __name__ == "__main__":
     sample_inputs = [
         "(a + b) * (c + d)",
         "(123)",
-        "a * b * c + d"
+        "a * b * c + d",
+        "a + b ) * c", # Example of a syntax error
+        "123 +" # Example of premature EOF
     ]
     
     for input_text in sample_inputs:
