@@ -181,9 +181,9 @@ if __name__ == "__main__":
     import sys
     
     if len(sys.argv) > 1:
-        grammar_file = sys.argv[1]
+        grammar_file = "Grammers/" + sys.argv[1]
     else:
-        grammar_file = "grammar.ll1"
+        grammar_file = "Grammers/grammar.ll1"
     
     print(f"Using grammar file: {grammar_file}")
     

@@ -224,8 +224,8 @@ def main():
         print("  input_file: Optional path to input code file (interactive mode if not provided)")
         sys.exit(1)
     
-    grammar_file = sys.argv[1]
-    input_file = sys.argv[2] if len(sys.argv) > 2 else None
+    grammar_file = 'Grammers/' + sys.argv[1]
+    input_file = "Grammers/" + sys.argv[2] if len(sys.argv) > 2 else None
     
     # Check if grammar file exists
     if not os.path.exists(grammar_file):

@@ -231,9 +231,9 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) > 1:
-        grammar_file_path = sys.argv[1]
+        grammar_file_path = "Grammers/" + sys.argv[1]
     else:
-        grammar_file_path = "grammar.ll1" 
+        grammar_file_path = "Grammers/grammar.ll1" 
         print(f"No grammar file provided. Using default: '{grammar_file_path}'")
 
     try:
