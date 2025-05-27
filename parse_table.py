@@ -2,6 +2,8 @@ from typing import Dict, List, Set, Tuple
 import re
 from dataclasses import dataclass
 from lexical_analyzer import TokenType, Token, LexicalAnalyzer
+import graphviz
+import os
 
 class ParserTables:
     def __init__(self, lexical_analyzer):
@@ -237,6 +239,175 @@ class ParserTables:
         for terminal in sorted(self.terminals):
             print("-" * (col_widths[terminal] + 2) + "+", end="")
         print()
+    
+    def export_parse_table_html(self, filename: str = "parse_table.html"):
+        """Export parse table as a nicely formatted HTML file."""
+        os.makedirs("Parse_Tables", exist_ok=True)
+        filepath = os.path.join("Parse_Tables", filename)
+        
+        html_content = """<!DOCTYPE html>
+<html>
+<head>
+    <title>LL(1) Parse Table</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        table {
+            border-collapse: collapse;
+            width: auto;
+            margin: 20px 0;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+        .non-terminal-header {
+            background-color: #2196F3;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #e8f5e9;
+        }
+        .production {
+            font-family: 'Courier New', monospace;
+            color: #d32f2f;
+        }
+        .epsilon {
+            color: #9c27b0;
+            font-style: italic;
+        }
+        .set-display {
+            font-family: 'Courier New', monospace;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>LL(1) Parse Table</h1>
+"""
+        
+        # Add grammar information
+        html_content += f"<h2>Grammar Information</h2>"
+        html_content += f"<p><strong>Start Symbol:</strong> {self.start_symbol}</p>"
+        html_content += f"<p><strong>Non-Terminals:</strong> {', '.join(sorted(self.non_terminals))}</p>"
+        html_content += f"<p><strong>Terminals:</strong> {', '.join(sorted(self.terminals))}</p>"
+        
+        # Add FIRST sets
+        html_content += "<h2>FIRST Sets</h2>"
+        html_content += "<div class='set-display'>"
+        for nt in sorted(self.non_terminals):
+            first_set = self.first_sets[nt]
+            html_content += f"FIRST({nt}) = {{{', '.join(sorted(first_set))}}}<br>"
+        html_content += "</div>"
+        
+        # Add FOLLOW sets
+        html_content += "<h2>FOLLOW Sets</h2>"
+        html_content += "<div class='set-display'>"
+        for nt in sorted(self.non_terminals):
+            follow_set = self.follow_sets[nt]
+            html_content += f"FOLLOW({nt}) = {{{', '.join(sorted(follow_set))}}}<br>"
+        html_content += "</div>"
+        
+        # Add parse table
+        html_content += "<h2>Parse Table</h2>"
+        html_content += "<table>"
+        
+        # Header row
+        html_content += "<tr><th>Non-Terminal</th>"
+        for terminal in sorted(self.terminals):
+            html_content += f"<th>{terminal}</th>"
+        html_content += "</tr>"
+        
+        # Data rows
+        for nt in sorted(self.non_terminals):
+            html_content += f"<tr><td class='non-terminal-header'>{nt}</td>"
+            for terminal in sorted(self.terminals):
+                entry = self.parse_table[nt][terminal]
+                if entry:
+                    if entry == 'eps':
+                        html_content += f"<td class='epsilon'>ε</td>"
+                    else:
+                        html_content += f"<td class='production'>{entry}</td>"
+                else:
+                    html_content += "<td></td>"
+            html_content += "</tr>"
+        
+        html_content += "</table></body></html>"
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        
+        print(f"✓ Parse table exported to '{filepath}'")
+        return filepath
+    
+    def visualize_parse_table_graphviz(self, filename: str = "parse_table_viz"):
+        """Create a visual representation of the parse table using graphviz."""
+        os.makedirs("Parse_Tables", exist_ok=True)
+        
+        dot = graphviz.Digraph(comment='LL(1) Parse Table', engine='fdp')
+        dot.attr(rankdir='TB')
+        dot.attr('node', shape='record', style='filled', fontsize='10')
+        
+        # Create a table-like structure
+        table_label = "<<TABLE BORDER='0' CELLBORDER='1' CELLSPACING='0'>"
+        
+        # Header row
+        table_label += "<TR><TD BGCOLOR='lightblue'><B>Non-Terminal</B></TD>"
+        for terminal in sorted(self.terminals):
+            table_label += f"<TD BGCOLOR='lightgreen'><B>{terminal}</B></TD>"
+        table_label += "</TR>"
+        
+        # Data rows
+        for nt in sorted(self.non_terminals):
+            table_label += f"<TR><TD BGCOLOR='lightcoral'><B>{nt}</B></TD>"
+            for terminal in sorted(self.terminals):
+                entry = self.parse_table[nt][terminal]
+                if entry:
+                    if entry == 'eps':
+                        table_label += "<TD>ε</TD>"
+                    else:
+                        # Escape special characters for HTML
+                        escaped_entry = entry.replace('<', '&lt;').replace('>', '&gt;')
+                        table_label += f"<TD>{escaped_entry}</TD>"
+                else:
+                    table_label += "<TD></TD>"
+            table_label += "</TR>"
+        
+        table_label += "</TABLE>>"
+        
+        # Add the table as a single node
+        dot.node('parse_table', label=table_label, shape='plaintext')
+        
+        # Save the visualization
+        filepath = os.path.join("Parse_Tables", filename)
+        try:
+            dot.render(filepath, format='pdf', cleanup=True, view=False)
+            print(f"✓ Parse table visualization saved to '{filepath}.pdf'")
+        except Exception as e:
+            print(f"❌ Error rendering parse table visualization: {e}")
+        
+        return filepath
     
     def print_first_sets(self):
         print("FIRST Sets:")
