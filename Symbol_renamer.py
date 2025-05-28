@@ -1,6 +1,5 @@
 from typing import List, Set, Optional, Dict, Tuple
 from parse_tree import ParseTreeNode, ParseTreeGenerator
-from lexical_analyzer import Token
 
 class SymbolRenamer:
 
@@ -18,11 +17,19 @@ class SymbolRenamer:
     
     def _collect_identifiers(self, node: ParseTreeNode, current_scope: Optional[Dict] = None):
         """Recursively collect all identifier nodes and their relationships."""
-        if node.is_terminal and node.symbol == 'IDENTIFIER':
-            identifier_value = node.value
-            if identifier_value not in self.identifier_nodes:
-                self.identifier_nodes[identifier_value] = []
-            self.identifier_nodes[identifier_value].append(node)
+        if node.is_terminal:
+            # Check for different possible identifier token types
+            if (node.symbol == 'IDENTIFIER' or 
+                node.symbol == 'ID' or 
+                (hasattr(node, 'token') and node.token and 
+                 hasattr(node.token.type, 'name') and 
+                 node.token.type.name in ['IDENTIFIER', 'ID'])):
+                
+                identifier_value = node.value
+                if identifier_value not in self.identifier_nodes:
+                    self.identifier_nodes[identifier_value] = []
+                self.identifier_nodes[identifier_value].append(node)
+                print(f"Found identifier: {identifier_value} at node {node}")
         
         # Recursively process children
         for child in node.children:
@@ -34,13 +41,18 @@ class SymbolRenamer:
         This is a simplified version - in a real implementation, you'd need to
         consider scoping rules, declarations vs uses, etc.
         """
-        if not target_node.is_terminal or target_node.symbol != 'IDENTIFIER':
+        # Check if target node is an identifier
+        is_identifier = (target_node.is_terminal and 
+                        (target_node.symbol == 'IDENTIFIER' or 
+                         target_node.symbol == 'ID' or
+                         (hasattr(target_node, 'token') and target_node.token and 
+                          hasattr(target_node.token.type, 'name') and 
+                          target_node.token.type.name in ['IDENTIFIER', 'ID'])))
+        
+        if not is_identifier:
             raise ValueError("Target node must be an IDENTIFIER terminal")
         
         target_value = target_node.value
-        
-        # For the simple grammar, all identifiers with the same name are related
-        # In a more complex grammar, you'd need to analyze scope and declarations
         return self.identifier_nodes.get(target_value, [])
     
     def rename_symbol(self, target_node: ParseTreeNode, new_name: str) -> str:
@@ -92,9 +104,15 @@ class SymbolRenamer:
         
         current_pos = 0
         for term_node in terminals:
-            if term_node.symbol == 'IDENTIFIER' and current_pos == position:
+            is_identifier = (term_node.symbol == 'IDENTIFIER' or 
+                           term_node.symbol == 'ID' or
+                           (hasattr(term_node, 'token') and term_node.token and 
+                            hasattr(term_node.token.type, 'name') and 
+                            term_node.token.type.name in ['IDENTIFIER', 'ID']))
+            
+            if is_identifier and current_pos == position:
                 return term_node
-            if term_node.symbol == 'IDENTIFIER':
+            if is_identifier:
                 current_pos += 1
         
         return None
@@ -107,9 +125,20 @@ class SymbolRenamer:
         
         position = 0
         for term_node in terminals:
-            if term_node.symbol == 'IDENTIFIER':
+            is_identifier = (term_node.symbol == 'IDENTIFIER' or 
+                           term_node.symbol == 'ID' or
+                           (hasattr(term_node, 'token') and term_node.token and 
+                            hasattr(term_node.token.type, 'name') and 
+                            term_node.token.type.name in ['IDENTIFIER', 'ID']))
+            
+            if is_identifier:
                 identifiers.append((term_node.value, position))
                 position += 1
+        
+        print(f"Debug: Found {len(identifiers)} identifiers total")
+        print(f"Debug: Identifier nodes dict has {len(self.identifier_nodes)} entries")
+        for key, nodes in self.identifier_nodes.items():
+            print(f"  '{key}': {len(nodes)} occurrences")
         
         return identifiers
 

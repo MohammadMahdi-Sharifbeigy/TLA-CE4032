@@ -65,7 +65,7 @@ class ParseTreeGenerator:
         try:
             # Reset node counter for each new tree visualization
             self.node_counter = 0 
-            root_node = self._build_tree_from_log(log_steps, tokens)
+            root_node = self._build_tree_from_log_fixed(log_steps, tokens)
             if root_node:
                  print("Parse tree built successfully from DPDA log.")
             return True, root_node
@@ -75,93 +75,92 @@ class ParseTreeGenerator:
             traceback.print_exc()
             return False, None
 
-    def _parse_log_line(self, log_line: str) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    def _parse_log_line_fixed(self, log_line: str) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
         """
-        Parse a DPDA log line more robustly using regex.
+        Parse a DPDA log line more robustly.
         Returns: (step, stack, input, action) or (None, None, None, None) if parsing fails
         """
         # Skip headers and empty lines
         if not log_line.strip() or "---" in log_line or log_line.startswith("Step"):
             return None, None, None, None
         
-        # Try to parse using regex - more flexible than fixed positions
-        # Pattern: step number, then stack content, then input remainder, then action
-        pattern = r'^(\d+)\s+(.+?)\s{2,}(.+?)\s{2,}(.+)$'
-        match = re.match(pattern, log_line)
+        # Try to parse using a more flexible approach
+        # The format should be: step_num stack input action
+        parts = log_line.split()
+        if len(parts) < 4:
+            return None, None, None, None
+            
+        # Check if first part is a step number
+        try:
+            step_num = int(parts[0])
+        except ValueError:
+            return None, None, None, None
+            
+        # Find where the action starts by looking for keywords
+        action_keywords = ["Expand:", "Match", "Accept:", "Error:"]
+        action_start_idx = -1
         
-        if match:
-            step = match.group(1)
-            stack = match.group(2).strip()
-            input_remainder = match.group(3).strip()
-            action = match.group(4).strip()
-            return step, stack, input_remainder, action
+        for i, part in enumerate(parts):
+            if any(keyword in part for keyword in action_keywords):
+                action_start_idx = i
+                break
         
-        # Fallback: try to extract just the action part
-        # Look for known action patterns
-        if "Expand:" in log_line or "Match terminal:" in log_line or "Accept:" in log_line or "Error:" in log_line:
-            # Find where the action starts
-            for keyword in ["Expand:", "Match terminal:", "Accept:", "Error:", "Lexical Error:"]:
-                if keyword in log_line:
-                    action_start = log_line.find(keyword)
-                    action = log_line[action_start:].strip()
-                    return None, None, None, action
+        if action_start_idx == -1:
+            return None, None, None, None
+            
+        # Extract components
+        step = str(step_num)
+        stack_parts = parts[1:action_start_idx]
+        action_parts = parts[action_start_idx:]
         
-        return None, None, None, None
+        stack = " ".join(stack_parts) if stack_parts else ""
+        action = " ".join(action_parts) if action_parts else ""
+        
+        return step, stack, "", action
 
-    def _build_tree_from_log(self, log_steps: List[str], tokens: List[Token]) -> Optional[ParseTreeNode]:
+    def _build_tree_from_log_fixed(self, log_steps: List[str], tokens: List[Token]) -> Optional[ParseTreeNode]:
         """
         Constructs a ParseTreeNode structure based on the log of actions from the DPDA
-        and the list of tokens.
+        and the list of tokens - FIXED VERSION
         """
-        if not tokens: # Should have at least EOF if lexing was successful
-            print("Error (_build_tree_from_log): No tokens provided.")
+        if not tokens:
+            print("Error: No tokens provided.")
             return None
 
         start_symbol_name = self.lexer.start_symbol
         root_node = ParseTreeNode(start_symbol_name, is_terminal=False)
         
-        # This stack will hold ParseTreeNode instances that are expected to be
-        # expanded or matched, mirroring the DPDA's conceptual stack for tree building.
-        # We push children of an expansion in reverse, so the first child is at the top.
-        nodes_to_process_stack: List[ParseTreeNode] = [root_node]
+        # Stack to track nodes that need to be processed
+        node_stack: List[ParseTreeNode] = [root_node]
         
-        token_iterator = iter(tokens) # To consume tokens as terminals are matched
-
-        # Iterate through the DPDA log
+        # Token iterator
+        token_iter = iter(tokens)
+        current_token = next(token_iter, None)
+        
+        # Process each log step
         for log_entry in log_steps:
             log_line = log_entry.strip()
             
             # Parse the log line
-            step, stack, input_remainder, action_part = self._parse_log_line(log_line)
+            step, stack, input_remainder, action_part = self._parse_log_line_fixed(log_line)
             
             if action_part is None:
-                continue  # Skip unparseable lines
-            
-            if not nodes_to_process_stack and not ("Accept" in action_part or "Error" in action_part or "Lexical Error" in action_part):
-                print(f"Warning (_build_tree_from_log): Nodes to process stack is empty, but action is '{action_part}'.")
                 continue
-
+            
             if action_part.startswith("Expand:"):
-                if not nodes_to_process_stack:
-                    print(f"Error (_build_tree_from_log): Node stack empty on expand: {action_part}")
-                    return None 
+                if not node_stack:
+                    continue
+                    
+                current_parent_node = node_stack.pop()
                 
-                current_parent_node = nodes_to_process_stack.pop() # Node being expanded
-
                 # Extract the production from the action
-                # Format: "Expand: A -> B C D" or "Expand: A -> eps"
-                production_match = re.match(r'Expand:\s*(\w+)\s*->\s*(.+)', action_part)
+                production_match = re.search(r'Expand:\s*(\w+)\s*->\s*(.+)', action_part)
                 if not production_match:
-                    print(f"Warning: Could not parse expansion: {action_part}")
                     continue
                 
                 expanded_symbol = production_match.group(1).strip()
                 production_symbols_str = production_match.group(2).strip()
-
-                # Validate if the node being expanded matches the log
-                if current_parent_node.symbol != expanded_symbol:
-                    print(f"Warning (_build_tree_from_log): Mismatch! Node stack top: '{current_parent_node.symbol}', Log expands: '{expanded_symbol}'. Trusting log.")
-
+                
                 if production_symbols_str == 'eps':
                     eps_node = ParseTreeNode('eps', value='ε', is_terminal=True)
                     current_parent_node.add_child(eps_node)
@@ -169,63 +168,36 @@ class ParseTreeGenerator:
                     symbols_in_production = production_symbols_str.split()
                     children_nodes_created = []
                     for sym_str in symbols_in_production:
-                        # Determine if the symbol string from production is a terminal or non-terminal
-                        is_sym_terminal = sym_str in self.parser_tables.terminals 
+                        # Check if symbol is terminal
+                        is_sym_terminal = sym_str in self.parser_tables.terminals
                         child_node = ParseTreeNode(sym_str, is_terminal=is_sym_terminal)
                         current_parent_node.add_child(child_node)
                         children_nodes_created.append(child_node)
                     
                     # Push new child nodes onto the stack in reverse order
-                    # so the leftmost child of the production is processed first.
                     for child_node in reversed(children_nodes_created):
-                        nodes_to_process_stack.append(child_node)
+                        node_stack.append(child_node)
             
             elif action_part.startswith("Match terminal:"):
-                if not nodes_to_process_stack:
-                    print(f"Error (_build_tree_from_log): Node stack empty on match: {action_part}")
-                    return None
-
-                terminal_node_from_stack = nodes_to_process_stack.pop()
-                
-                # Extract the matched terminal from the action
-                terminal_match = re.match(r"Match terminal:\s*'?(\w+)'?", action_part)
-                if terminal_match:
-                    terminal_name_in_log = terminal_match.group(1)
+                if not node_stack:
+                    continue
                     
-                    # Validate match
-                    if terminal_node_from_stack.symbol != terminal_name_in_log:
-                        print(f"Warning: Mismatch node stack symbol '{terminal_node_from_stack.symbol}' vs log match '{terminal_name_in_log}'")
+                terminal_node = node_stack.pop()
                 
-                try:
-                    actual_token = next(token_iterator)
-                    # Skip if it's an EOF token unless our stack node is also expecting '$' (EOF symbol)
-                    while actual_token.type == self.lexer.EOF and terminal_node_from_stack.symbol != self.dpda.eof_symbol:
-                         print("Warning: Skipped unexpected EOF token during match.")
-                         actual_token = next(token_iterator)
-
-                    # Update the tree node with actual token info
-                    terminal_node_from_stack.value = actual_token.value
-                    terminal_node_from_stack.token = actual_token
-                    if not terminal_node_from_stack.is_terminal:
-                         print(f"Warning: Node {terminal_node_from_stack.symbol} was matched but not marked terminal.")
-                         terminal_node_from_stack.is_terminal = True
-
-                except StopIteration:
-                    print(f"Error (_build_tree_from_log): Ran out of tokens while trying to match '{terminal_node_from_stack.symbol}'. Log action: {action_part}")
-                    return None 
-
-            elif "Accept:" in action_part:
-                if nodes_to_process_stack:
-                    print(f"Warning (_build_tree_from_log): Node stack not empty on DPDA accept: {nodes_to_process_stack}. Remaining nodes will be ignored.")
-                return root_node 
+                # Get the next token and update the node
+                if current_token and current_token.type != self.lexer.EOF:
+                    terminal_node.value = current_token.value
+                    terminal_node.token = current_token
+                    terminal_node.is_terminal = True
+                    
+                    # Move to next token
+                    current_token = next(token_iter, None)
             
-            elif "Error:" in action_part or "Lexical Error:" in action_part:
-                print(f"Info (_build_tree_from_log): DPDA reported error, stopping tree build. Action: {action_part}")
-                return None 
-        
-        # Check if we properly accepted
-        if log_steps and not any("Accept:" in step for step in log_steps):
-            print("Warning (_build_tree_from_log): Reached end of log processing without explicit DPDA accept.")
+            elif "Accept:" in action_part:
+                break
+            
+            elif "Error:" in action_part:
+                return None
         
         return root_node
 

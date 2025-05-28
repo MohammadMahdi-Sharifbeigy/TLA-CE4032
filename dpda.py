@@ -17,7 +17,7 @@ class DPDA:
         self.parser_tables = parser_tables
         self.start_symbol = self.lexer.start_symbol
         self.eof_symbol = '$' 
-        self._vis_node_id_counter = 0 # For unique node IDs in visualization
+        self._vis_node_id_counter = 0
 
     def _get_vis_node_id(self) -> str:
         """Generates a unique node ID for graphviz visualizations."""

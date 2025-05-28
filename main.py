@@ -5,8 +5,8 @@ from typing import Optional
 from lexical_analyzer import LexicalAnalyzer
 from parse_table import ParserTables
 from dpda import DPDA
-from parse_tree import ParseTreeGenerator
-from Symbol_renamer import SymbolRenamer
+from parse_tree import ParseTreeGenerator  
+from Symbol_renamer import SymbolRenamer  
 
 
 class MiniCompiler:
@@ -96,7 +96,7 @@ class MiniCompiler:
             print("   ✗ Input rejected by DPDA")
             return None
         
-        # Stage 3: Parse Tree Generation
+        # Stage 3: Parse Tree Generation (using fixed method)
         print("\n3. Parse Tree Generation:")
         success, parse_tree = self.tree_generator.generate_tree(input_text)
         
@@ -130,6 +130,14 @@ class MiniCompiler:
         
         if not identifiers:
             print("No identifiers found in the parse tree.")
+            print("This might be because:")
+            print("  1. The input doesn't contain any identifiers")
+            print("  2. The parse tree wasn't built correctly")
+            print("  3. The identifier detection logic needs adjustment")
+            
+            # Debug: Print all terminal nodes found
+            print("\nDEBUG: All terminal nodes in parse tree:")
+            self._debug_print_terminals(parse_tree)
             return None
         
         # Display available identifiers (group by value)
@@ -209,6 +217,20 @@ class MiniCompiler:
         except Exception as e:
             print(f"✗ Renaming failed: {e}")
             return None
+    
+    def _debug_print_terminals(self, node, indent=0):
+        """Debug helper to print all terminal nodes in the tree"""
+        if not node:
+            return
+            
+        prefix = "  " * indent
+        if node.is_terminal:
+            print(f"{prefix}TERMINAL: {node.symbol} = '{node.value}' (token: {node.token})")
+        else:
+            print(f"{prefix}NON-TERMINAL: {node.symbol}")
+        
+        for child in node.children:
+            self._debug_print_terminals(child, indent + 1)
 
 
 def main():
