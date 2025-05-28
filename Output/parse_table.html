@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LL(1) Parse Table</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        table {
+            border-collapse: collapse;
+            width: auto;
+            margin: 20px 0;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+        .non-terminal-header {
+            background-color: #2196F3;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #e8f5e9;
+        }
+        .production {
+            font-family: 'Courier New', monospace;
+            color: #d32f2f;
+        }
+        .epsilon {
+            color: #9c27b0;
+            font-style: italic;
+        }
+        .set-display {
+            font-family: 'Courier New', monospace;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>LL(1) Parse Table</h1>
+<h2>Grammar Information</h2><p><strong>Start Symbol:</strong> Program</p><p><strong>Non-Terminals:</strong> Block, Expression, Expression_pr, Factor, Function, Program, Statement, Statements, Term, Term_pr</p><p><strong>Terminals:</strong> $, EQUALS, FUNCTION, ID, IF, LEFT_BRACE, LEFT_PAR, MINUS, NUM, PLUS, RETURN, RIGHT_BRACE, RIGHT_PAR, SEMICOLON, SLASH, STAR, WHILE</p><h2>FIRST Sets</h2><div class='set-display'>FIRST(Block) = {LEFT_BRACE}<br>FIRST(Expression) = {ID, LEFT_PAR, NUM}<br>FIRST(Expression_pr) = {MINUS, PLUS, eps}<br>FIRST(Factor) = {ID, LEFT_PAR, NUM}<br>FIRST(Function) = {FUNCTION}<br>FIRST(Program) = {FUNCTION, eps}<br>FIRST(Statement) = {ID, IF, RETURN, WHILE}<br>FIRST(Statements) = {ID, IF, RETURN, WHILE, eps}<br>FIRST(Term) = {ID, LEFT_PAR, NUM}<br>FIRST(Term_pr) = {SLASH, STAR, eps}<br></div><h2>FOLLOW Sets</h2><div class='set-display'>FOLLOW(Block) = {$, FUNCTION, ID, IF, RETURN, RIGHT_BRACE, WHILE}<br>FOLLOW(Expression) = {RIGHT_PAR, SEMICOLON}<br>FOLLOW(Expression_pr) = {RIGHT_PAR, SEMICOLON}<br>FOLLOW(Factor) = {MINUS, PLUS, RIGHT_PAR, SEMICOLON, SLASH, STAR}<br>FOLLOW(Function) = {$, FUNCTION}<br>FOLLOW(Program) = {$}<br>FOLLOW(Statement) = {ID, IF, RETURN, RIGHT_BRACE, WHILE}<br>FOLLOW(Statements) = {RIGHT_BRACE}<br>FOLLOW(Term) = {MINUS, PLUS, RIGHT_PAR, SEMICOLON}<br>FOLLOW(Term_pr) = {MINUS, PLUS, RIGHT_PAR, SEMICOLON}<br></div><h2>Parse Table</h2><table><tr><th>Non-Terminal</th><th>$</th><th>EQUALS</th><th>FUNCTION</th><th>ID</th><th>IF</th><th>LEFT_BRACE</th><th>LEFT_PAR</th><th>MINUS</th><th>NUM</th><th>PLUS</th><th>RETURN</th><th>RIGHT_BRACE</th><th>RIGHT_PAR</th><th>SEMICOLON</th><th>SLASH</th><th>STAR</th><th>WHILE</th></tr><tr><td class='non-terminal-header'>Block</td><td></td><td></td><td></td><td></td><td></td><td class='production'>LEFT_BRACE  Statements  RIGHT_BRACE</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td class='non-terminal-header'>Expression</td><td></td><td></td><td></td><td class='production'>Term  Expression_pr</td><td></td><td></td><td class='production'>Term  Expression_pr</td><td></td><td class='production'>Term  Expression_pr</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td class='non-terminal-header'>Expression_pr</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class='production'>MINUS  Term  Expression_pr</td><td></td><td class='production'>PLUS  Term  Expression_pr</td><td></td><td></td><td class='epsilon'>ε</td><td class='epsilon'>ε</td><td></td><td></td><td></td></tr><tr><td class='non-terminal-header'>Factor</td><td></td><td></td><td></td><td class='production'>ID</td><td></td><td></td><td class='production'>LEFT_PAR  Expression  RIGHT_PAR</td><td></td><td class='production'>NUM</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td class='non-terminal-header'>Function</td><td></td><td></td><td class='production'>FUNCTION  ID  LEFT_PAR  RIGHT_PAR  Block</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td class='non-terminal-header'>Program</td><td class='epsilon'>ε</td><td></td><td class='production'>Function  Program</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td class='non-terminal-header'>Statement</td><td></td><td></td><td></td><td class='production'>ID EQUALS Expression SEMICOLON</td><td class='production'>IF LEFT_PAR Expression RIGHT_PAR Block</td><td></td><td></td><td></td><td></td><td></td><td class='production'>RETURN Expression SEMICOLON</td><td></td><td></td><td></td><td></td><td></td><td class='production'>WHILE LEFT_PAR Expression RIGHT_PAR Block</td></tr><tr><td class='non-terminal-header'>Statements</td><td></td><td></td><td></td><td class='production'>Statement  Statements</td><td class='production'>Statement  Statements</td><td></td><td></td><td></td><td></td><td></td><td class='production'>Statement  Statements</td><td class='epsilon'>ε</td><td></td><td></td><td></td><td></td><td class='production'>Statement  Statements</td></tr><tr><td class='non-terminal-header'>Term</td><td></td><td></td><td></td><td class='production'>Factor  Term_pr</td><td></td><td></td><td class='production'>Factor  Term_pr</td><td></td><td class='production'>Factor  Term_pr</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td class='non-terminal-header'>Term_pr</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class='epsilon'>ε</td><td></td><td class='epsilon'>ε</td><td></td><td></td><td class='epsilon'>ε</td><td class='epsilon'>ε</td><td class='production'>SLASH  Factor  Term_pr</td><td class='production'>STAR  Factor  Term_pr</td><td></td></tr></table></body></html>
