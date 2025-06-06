@@ -1,0 +1,27 @@
+function outer ( ) {
+    x = 10 ;
+    y = 20 ;
+    if ( x ) {
+        x = 30 ;
+        z = x + y ;
+    }
+    while ( y ) {
+        y = y - 1 ;
+        temp = x * 2 ;
+        if ( temp ) {
+            inner_var = temp + 5 ;
+        }
+    }
+    result = x + y ;
+    return result ;
+}
+
+function inner ( ) {
+    x = 100 ;
+    different_var = x + 50 ;
+    if ( different_var ) {
+        x = x - 25 ;
+        local_only = x * 3 ;
+    }
+    return x ;
+}

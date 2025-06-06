@@ -122,7 +122,7 @@ class MiniCompiler:
             return None
     
     def interactive_rename(self, parse_tree, original_input: str):
-        """Interactive symbol renaming interface."""
+        """Interactive symbol renaming interface with scope awareness."""
         print("\n=== Symbol Renaming ===")
         
         renamer = SymbolRenamer(parse_tree)
@@ -163,18 +163,16 @@ class MiniCompiler:
             else:
                 print(f"'{selection}' not found. Available identifiers: {list(identifier_values.keys())}")
         
-        # Get the first occurrence of the selected identifier
-        selected_value = selection
-        first_position = identifier_values[selected_value][0]
-        target_node = renamer.get_identifier_by_position(first_position)
+        # Use the new scope-aware selection method
+        target_node = renamer.select_identifier_by_scope(selection)
         
         if not target_node:
             print("Error: Could not find the selected identifier.")
             return None
         
-        # Find related identifiers
+        # Find related identifiers (now scope-aware)
         related = renamer.find_related_identifiers(target_node)
-        print(f"\nFound {len(related)} occurrence(s) of '{target_node.value}'")
+        print(f"\nFound {len(related)} occurrence(s) of '{target_node.value}' in the selected scope(s)")
         
         # Get new name
         new_name = input("Enter new name (or press Enter to cancel): ").strip()
