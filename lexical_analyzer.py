@@ -12,7 +12,7 @@ class TokenType:
             return self.name == other.name
         return False
     
-    def __hash__(self):
+    def __hash__(self): # این تابع برای استفاده در dictionary ها و set ها لازمه
         return hash(self.name)
 
 class Token:

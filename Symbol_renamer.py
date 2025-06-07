@@ -399,7 +399,7 @@ def demonstrate_symbol_renaming():
     import sys
     
     # Use the provided grammar file
-    grammar_file = sys.argv[1] if len(sys.argv) > 1 else "grammar.ll1"
+    grammar_file = "Grammers/" + sys.argv[1] if len(sys.argv) > 1 else "grammar.ll1"
     
     try:
         # Initialize components
